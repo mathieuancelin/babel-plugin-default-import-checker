@@ -1,6 +1,6 @@
 import B from './b';
 import ZZZ from './z';
 
-export default function yo() {
+export  function yo() {
   return B.yo();
 }

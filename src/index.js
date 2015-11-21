@@ -61,8 +61,12 @@ export default function defaultImportsChecker() {
           id = setTimeout(() => {
             clearTimeout(id);
             const [errors, warnings] = validateModules();
-            console.log(errors.join('\n\n').yellow);
-            console.log(warnings.join('\n\n').red);
+            if (warnings.length > 0) {
+              console.log(warnings.join('\n\n').yellow);
+            }
+            if (errors.length > 0) {
+              console.log(errors.join('\n\n').red);
+            }
           }, 100);
         },
       },
