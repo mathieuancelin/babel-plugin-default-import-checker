@@ -17,10 +17,10 @@ function validateModules() {
         if (!depModule.exportDefault) {
           const message = `ERROR : module '${module.name}' try to use default binding
 of module '${depModule.name}' at line [${dep.line}] but there is none.
- | import ${dep.variable} from '${dep.path}';
+|${dep.line}| import ${dep.variable} from '${dep.path}';
 You should add a default binding to '${depModule.name}'
 or use the following import :
- | import * as ${dep.variable} from  '${dep.path}';`;
+|${dep.line}| import * as ${dep.variable} from  '${dep.path}';`;
           if (errors.indexOf(message) < 0) {
             errors.push(message);
           }
@@ -34,7 +34,7 @@ or use the following import :
     if (dep && dep.exportDefault && !dep.exportOther) {
       const message = `WARNING : module '${imprt.from}' is using namespace import of module '${imprt.filename}'
 at line [${imprt.line}] but this module has default export. Maybe it's an error.
- | import * as ${imprt.variable} from '${imprt.path}';`;
+|${imprt.line}| import * as ${imprt.variable} from '${imprt.path}';`;
       if (errors.indexOf(message) < 0) {
         warnings.push(message);
       }
