@@ -63,17 +63,20 @@ function defaultModule(name) {
 }
 
 function validateModules() {
-  // console.log(modules);
   for (var key in modules) {
     var module = modules[key];
     for (var dkey in module.dependencies) {
       var dep = module.dependencies[dkey];
-      var depModule = modules[dep];
+      var depModule = modules[dep.filename];
       if (depModule) {
         if (!depModule.exportDefault) {
-          var message = 'ERROR : module ' + module.name
-            + ' try to use default binding of module '
-            + depModule.name + ' but there is none.';
+          var message = 'ERROR : module \'' + module.name
+            + '\' try to use default binding of module \''
+            + depModule.name + '\' at line [' + dep.line + '] but there is none.\n'
+            + ' | import ' + dep.variable + ' from \'' + dep.path + '\';\n'
+            + 'You should add a default binding to \'' + depModule.name
+            + '\' or use the following import :\n'
+            + ' | import * as ' + dep.variable + ' from \'' + dep.path + '\';';
           if (errors.indexOf(message) < 0) {
             errors.push(message);
           }
@@ -92,12 +95,13 @@ exports.default = function (babel) {
           clearTimeout(id);
           defaultModule(parent.file.opts.filename);
           modules[parent.file.opts.filename].exportDefault = false;
+          modules[parent.file.opts.filename].dependencies = [];
         },
         exit: function(node, parent, scope) {
           validateModules();
           id = setTimeout(function() {
             clearTimeout(id);
-            console.log('\n' + errors.join('\n').red + '\n');
+            console.log(errors.join('\n\n').red);
             errors = [];
           }, 100);
         }
@@ -131,8 +135,12 @@ exports.default = function (babel) {
               }
             }
             var filename = filePath.join('/') + '.js';
-            modules[state.file.opts.filename].dependencies.push(filename);
-            // TODO : add import code for debugging
+            modules[state.file.opts.filename].dependencies.push({
+              filename: filename,
+              variable: specifier.local.name,
+              path: path.node.source.value,
+              line: specifier.loc.start.line,
+            });
           }
         });
       },
