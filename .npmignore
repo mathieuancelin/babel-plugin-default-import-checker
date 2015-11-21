@@ -1,4 +1,4 @@
 /node_modules
-/lib
-.DS_store
+/tests
+/src
 /tests-lib
