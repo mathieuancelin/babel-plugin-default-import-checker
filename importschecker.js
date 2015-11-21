@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-
+/*
 if (!Object.keys) {
   Object.keys = (function () {
     'use strict';
@@ -47,6 +47,7 @@ if (!Object.keys) {
     };
   }());
 }
+*/
 
 var modules = {};
 var errors = [];
@@ -87,8 +88,10 @@ exports.default = function (babel) {
   return {
     visitor: {
       Program: {
-        enter: function() {
+        enter: function(node, parent, scope) {
           clearTimeout(id);
+          defaultModule(parent.file.opts.filename);
+          modules[parent.file.opts.filename].exportDefault = false;
         },
         exit: function(node, parent, scope) {
           validateModules();
@@ -99,23 +102,20 @@ exports.default = function (babel) {
           }, 100);
         }
       },
-      ExportDeclaration: function(node, parent, scope) {
-        // filename : parent.file.opts.filename
-        defaultModule(parent.file.opts.filename);
-
-      },
       ExportDefaultDeclaration: function(node, parent, scope) {
         // filename : parent.file.opts.filename
-        defaultModule(parent.file.opts.filename);
         modules[parent.file.opts.filename].exportDefault = true;
       },
       ImportDeclaration: function(path, state) {
         // current file : state.file.opts.filename
-        defaultModule(state.file.opts.filename);
         path.node.specifiers.map(function(specifier, idx) {
           // variable name : specifier.local.name
           // relative module : path.node.source.value
-          // if (String(specifier.type) === 'ImportNamespaceSpecifier' && path.node.source.value.startsWith('.')) {
+
+          // ImportSpecifier => import { Foo } from './bar';
+          // ImportDefaultSpecifier => import Foo from './bar';
+          // ImportNamespaceSpecifier => import * as Foo from './bar';
+
           if (String(specifier.type) === 'ImportDefaultSpecifier' && path.node.source.value.startsWith('.')) {
             var relativePath = path.node.source.value.split('\/');
             var filePath = state.file.opts.filename.split('\/');
@@ -132,6 +132,7 @@ exports.default = function (babel) {
             }
             var filename = filePath.join('/') + '.js';
             modules[state.file.opts.filename].dependencies.push(filename);
+            // TODO : add import code for debugging
           }
         });
       },
