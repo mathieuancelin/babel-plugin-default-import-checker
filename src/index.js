@@ -5,41 +5,36 @@ const namespaceImports = [];
 
 function validateModules() {
   const errors = [];
-  for (const key in modules) {
-    const module = modules[key];
-    for (const dkey in module.dependencies) {
-      const dep = module.dependencies[dkey];
+  Object.keys(modules).map(k => modules[k]).forEach(module => {
+    module.dependencies.forEach(dep => {
       const depModule = modules[dep.filename];
       if (depModule) {
         if (!depModule.exportDefault) {
-          const message = 'ERROR : module \'' + module.name
-            + '\' try to use default binding of module \''
-            + depModule.name + '\' at line [' + dep.line + '] but there is none.\n'
-            + ' | import ' + dep.variable + ' from \'' + dep.path + '\';\n'
-            + 'You should add a default binding to \'' + depModule.name
-            + '\' or use the following import :\n'
-            + ' | import * as ' + dep.variable + ' from \'' + dep.path + '\';';
+          const message = `ERROR : module '${module.name}' try to use default binding
+of module '${depModule.name}' at line [${dep.line}] but there is none.
+ | import ${dep.variable} from '${dep.path}';
+You should add a default binding to '${depModule.name}'
+or use the following import :
+ | import * as ${dep.variable} from  '${dep.path}';`;
           if (errors.indexOf(message) < 0) {
             errors.push(message);
           }
         }
       }
-    }
-  }
+    });
+  });
   const warnings = [];
-  for (const idx in namespaceImports) {
-    const imprt = namespaceImports[idx];
+  namespaceImports.forEach(imprt => {
     const dep = modules[imprt.filename];
     if (dep && dep.exportDefault && !dep.exportOther) {
-      const message = 'WARNING : module \'' + imprt.from
-        + '\' is using namespace import of module \''
-        + imprt.filename + '\' at line [' + imprt.line + '] \nbut this module has default export. Maybe it\'s an error.\n'
-        + ' | import * as ' + imprt.variable + ' from \'' + imprt.path + '\';\n';
+      const message = `WARNING : module '${imprt.from}' is using namespace import of module '${imprt.filename}'
+at line [${imprt.line}] but this module has default export. Maybe it's an error.
+ | import * as ${imprt.variable} from '${imprt.path}';`;
       if (errors.indexOf(message) < 0) {
         warnings.push(message);
       }
     }
-  }
+  });
   return [errors, warnings];
 }
 
@@ -63,6 +58,9 @@ export default function defaultImportsChecker() {
             const [errors, warnings] = validateModules();
             if (warnings.length > 0) {
               console.log(warnings.join('\n\n').yellow);
+            }
+            if (warnings.length > 0 && errors.length > 0) {
+              console.log('');
             }
             if (errors.length > 0) {
               console.log(errors.join('\n\n').red);

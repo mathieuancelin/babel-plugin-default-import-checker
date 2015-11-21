@@ -1,7 +1,7 @@
 {
   "name": "babel-plugin-default-import-checker",
   "version": "1.0.0",
-  "description": "",
+  "description": "Babel 6 plugin to check if your using default imports and namespace imports on local modules that exports default bindings",
   "main": "lib/index.js",
   "jsnext:main": "lib/index.js",
   "scripts": {
@@ -14,10 +14,19 @@
   },
   "author": "Mathieu ANCELIN",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mathieuancelin/babel-plugin-default-import-checker.git"
+  },
+  "keywords": [
+    "babel",
+    "babel-plugin",
+    "import",
+    "default",
+    "namespace"
+  ],
   "dependencies": {
-    "babel-polyfill": "^6.1.19",
-    "colors": "^1.1.2",
-    "eslint-plugin-react": "^3.10.0"
+    "colors": "^1.1.2"
   },
   "devDependencies": {
     "babel": "^6.1.18",
@@ -27,6 +36,7 @@
     "babel-preset-stage-0": "^6.1.18",
     "babel-eslint": "^4.1.5",
     "eslint": "^1.9.0",
-    "eslint-config-airbnb": "^1.0.0"
+    "eslint-config-airbnb": "^1.0.0",
+    "eslint-plugin-react": "^3.10.0"
   }
 }
