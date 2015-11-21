@@ -3,6 +3,8 @@ babel-plugin-default-import-checker
 
 Babel 6 plugin to check if your using default imports and namespace imports on local modules that exports default bindings.
 
+This plugin only work on module transformed with Babel, it won't show any error for imports on `node_modules` modules.
+
 Usage
 ===============
 
