@@ -1,5 +1,5 @@
 {
-  "name": "babel-plugin-import-default-checker",
+  "name": "babel-plugin-default-import-checker",
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",

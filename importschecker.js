@@ -50,7 +50,7 @@ if (!Object.keys) {
 */
 
 var modules = {};
-var errors = [];
+var namespaceImports = [];
 
 function defaultModule(name) {
   if (!modules[name]) {
@@ -58,11 +58,12 @@ function defaultModule(name) {
       name: name,
       exportDefault: false,
       dependencies: [],
-    }
+    };
   }
 }
 
 function validateModules() {
+  var errors = [];
   for (var key in modules) {
     var module = modules[key];
     for (var dkey in module.dependencies) {
@@ -84,6 +85,20 @@ function validateModules() {
       }
     }
   }
+  var warnings = [];
+  console.log(namespaceImports);
+  for (var idx in namespaceImports) {
+    var imprt = namespaceImports[idx];
+    var dep = modules[imprt.name];
+    if (dep && dep.exportDefault) {
+      var message = 'WARNING : module \'' + imprt.name
+        + '\' is using namespace import of module \''
+        + imprt.name + '\' at line [' + imprt.line + '] but this module has default export. Maybe it\'s an error\n'
+        + ' | import * as ' + imprt.variable + ' from \'' + imprt.path + '\';\n';
+      warnings.push(message);
+    }
+  }
+  return [errors, warnings];
 }
 
 exports.default = function (babel) {
@@ -93,16 +108,18 @@ exports.default = function (babel) {
       Program: {
         enter: function(node, parent, scope) {
           clearTimeout(id);
-          defaultModule(parent.file.opts.filename);
-          modules[parent.file.opts.filename].exportDefault = false;
-          modules[parent.file.opts.filename].dependencies = [];
+          modules[parent.file.opts.filename] = {
+            name: parent.file.opts.filename,
+            exportDefault: false,
+            dependencies: [],
+          };
         },
         exit: function(node, parent, scope) {
-          validateModules();
           id = setTimeout(function() {
             clearTimeout(id);
-            console.log(errors.join('\n\n').red);
-            errors = [];
+            var messages = validateModules();
+            console.log(messages[1].join('\n\n').yellow);
+            console.log(messages[0].join('\n\n').red);
           }, 100);
         }
       },
@@ -120,7 +137,7 @@ exports.default = function (babel) {
           // ImportDefaultSpecifier => import Foo from './bar';
           // ImportNamespaceSpecifier => import * as Foo from './bar';
 
-          if (String(specifier.type) === 'ImportDefaultSpecifier' && path.node.source.value.startsWith('.')) {
+          function extractFilename() {
             var relativePath = path.node.source.value.split('\/');
             var filePath = state.file.opts.filename.split('\/');
             filePath.pop();
@@ -134,7 +151,21 @@ exports.default = function (babel) {
                 filePath.push(part);
               }
             }
-            var filename = filePath.join('/') + '.js';
+            return filePath.join('/') + '.js';
+          }
+
+          if (String(specifier.type) === 'ImportNamespaceSpecifier' && path.node.source.value.startsWith('.')) {
+            var filename = extractFilename();
+            namespaceImports.push({
+              from: state.file.opts.filename,
+              filename: filename,
+              variable: specifier.local.name,
+              path: path.node.source.value,
+              line: specifier.loc.start.line,
+            });
+          }
+          if (String(specifier.type) === 'ImportDefaultSpecifier' && path.node.source.value.startsWith('.')) {
+            var filename = extractFilename();
             modules[state.file.opts.filename].dependencies.push({
               filename: filename,
               variable: specifier.local.name,
