@@ -94,7 +94,7 @@ exports.default = function (babel) {
           validateModules();
           id = setTimeout(function() {
             clearTimeout(id);
-            console.log(errors.join('\n').red);
+            console.log('\n' + errors.join('\n').red + '\n');
             errors = [];
           }, 100);
         }
