@@ -1,8 +1,11 @@
 'use strict';
 
+var colors = require('colors');
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
 
 if (!Object.keys) {
   Object.keys = (function () {
@@ -45,66 +48,74 @@ if (!Object.keys) {
   }());
 }
 
-var every = 20;
-var addedExpires = 100;
-var waitingValidation = [];
-var modulesThatExportDefault = {};
-var last = Date.now();
-var running = false;
+var modules = {};
+var errors = [];
 
-function checkValidations() {
-  if (waitingValidation.length > 0) {
-    var validation = waitingValidation.pop();
-    if (!modulesThatExportDefault[validation.filename]) {
-      if (validation.expires < Date.now()) {
-        console.log('ERROR : ' + validation.message);
-      } else {
-        waitingValidation.push(validation);
-      }
+function defaultModule(name) {
+  if (!modules[name]) {
+    modules[name] = {
+      name: name,
+      exportDefault: false,
+      dependencies: [],
     }
   }
-  if ((last + 1000) > Date.now()) {
-    running = true;
-    setTimeout(checkValidations, every);
-  } else {
-    running = false;
+}
+
+function validateModules() {
+  // console.log(modules);
+  for (var key in modules) {
+    var module = modules[key];
+    for (var dkey in module.dependencies) {
+      var dep = module.dependencies[dkey];
+      var depModule = modules[dep];
+      if (depModule) {
+        if (!depModule.exportDefault) {
+          var message = 'ERROR : module ' + module.name
+            + ' try to use default binding of module '
+            + depModule.name + ' but there is none.';
+          if (errors.indexOf(message) < 0) {
+            errors.push(message);
+          }
+        }
+      }
+    }
   }
 }
 
 exports.default = function (babel) {
-  console.log('instanciate babel plugin');
-  checkValidations();
+  var id;
   return {
     visitor: {
       Program: {
         enter: function() {
-          console.log('neter');
-          last = Date.now();
-          if (!running) {
-            checkValidations();
-          }
+          clearTimeout(id);
         },
         exit: function(node, parent, scope) {
-          console.log('exiit');
-          last = Date.now();
-          if (!running) {
-            checkValidations();
-          }
+          validateModules();
+          id = setTimeout(function() {
+            clearTimeout(id);
+            console.log(errors.join('\n').red);
+            errors = [];
+          }, 100);
         }
+      },
+      ExportDeclaration: function(node, parent, scope) {
+        // filename : parent.file.opts.filename
+        defaultModule(parent.file.opts.filename);
+
       },
       ExportDefaultDeclaration: function(node, parent, scope) {
         // filename : parent.file.opts.filename
-        modulesThatExportDefault[parent.file.opts.filename] = true;
-        waitingValidation.forEach(function(item) {
-          item.expires = item.expires + addedExpires;
-        });
-        //console.log('Default export for ' + parent.file.opts.filename); // expose default
+        defaultModule(parent.file.opts.filename);
+        modules[parent.file.opts.filename].exportDefault = true;
       },
       ImportDeclaration: function(path, state) {
         // current file : state.file.opts.filename
+        defaultModule(state.file.opts.filename);
         path.node.specifiers.map(function(specifier, idx) {
           // variable name : specifier.local.name
           // relative module : path.node.source.value
+          // if (String(specifier.type) === 'ImportNamespaceSpecifier' && path.node.source.value.startsWith('.')) {
           if (String(specifier.type) === 'ImportDefaultSpecifier' && path.node.source.value.startsWith('.')) {
             var relativePath = path.node.source.value.split('\/');
             var filePath = state.file.opts.filename.split('\/');
@@ -120,14 +131,7 @@ exports.default = function (babel) {
               }
             }
             var filename = filePath.join('/') + '.js';
-            if (!modulesThatExportDefault[filename]) {
-              var valid = {
-                filename: filename,
-                message: state.file.opts.filename + ' tries to import default binding of ' + filename + ' but there is none',
-                expires: Date.now() + 20,
-              };
-              waitingValidation.push(valid);
-            }
+            modules[state.file.opts.filename].dependencies.push(filename);
           }
         });
       },

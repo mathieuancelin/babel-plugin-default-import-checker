@@ -1,3 +1,3 @@
-export  function yo() {
+export default function yo() {
 
 }
