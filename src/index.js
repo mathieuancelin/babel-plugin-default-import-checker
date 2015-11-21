@@ -15,12 +15,14 @@ function validateModules() {
       const depModule = modules[dep.filename];
       if (depModule) {
         if (!depModule.exportDefault) {
-          const message = `ERROR : module '${module.name}' try to use default binding
-of module '${depModule.name}' at line [${dep.line}] but there is none.
-|${dep.line}| import ${dep.variable} from '${dep.path}';
-You should add a default binding to '${depModule.name}'
-or use the following import :
-|${dep.line}| import * as ${dep.variable} from  '${dep.path}';`;
+          const message = [
+            [`ERROR : module '`.red, module.name.green, `' try to use default binding`.red].join(''),
+            [`of module '`.red, depModule.name.green, `' at line [${dep.line}] but there is none.`.red].join(''),
+            `|${dep.line}| import ${dep.variable} from '${dep.path}';`.cyan,
+            [`You should add a default binding to '`.red, depModule.name.green, `'`.red].join(''),
+            `or use the following import :`.red,
+            `|${dep.line}| import * as ${dep.variable} from  '${dep.path}';`.cyan,
+          ].join('\n');
           if (errors.indexOf(message) < 0) {
             errors.push(message);
           }
@@ -32,9 +34,11 @@ or use the following import :
   namespaceImports.forEach(imprt => {
     const dep = modules[imprt.filename];
     if (dep && dep.exportDefault && !dep.exportOther) {
-      const message = `WARNING : module '${imprt.from}' is using namespace import of module '${imprt.filename}'
-at line [${imprt.line}] but this module has default export. Maybe it's an error.
-|${imprt.line}| import * as ${imprt.variable} from '${imprt.path}';`;
+      const message = [
+        [`WARNING : module '`.yellow, imprt.from.green, `' is using namespace import of module '`.yellow, imprt.filename.green, `'`.yellow].join(''),
+        `at line [${imprt.line}] but this module has default export. Maybe it's an error.`.yellow,
+        `|${imprt.line}| import * as ${imprt.variable} from '${imprt.path}';`.cyan,
+      ].join('\n');
       if (errors.indexOf(message) < 0) {
         warnings.push(message);
       }
@@ -62,13 +66,13 @@ export default function defaultImportsChecker() {
             cancel();
             const [errors, warnings] = validateModules();
             if (warnings.length > 0) {
-              console.log(warnings.join('\n\n').yellow);
+              console.log(warnings.join('\n\n'));
             }
             if (warnings.length > 0 && errors.length > 0) {
               console.log('');
             }
             if (errors.length > 0) {
-              console.log(errors.join('\n\n').red);
+              console.log(errors.join('\n\n'));
             }
           });
         },
