@@ -3,6 +3,11 @@ require('colors');
 const modules = {};
 const namespaceImports = [];
 
+function runIn(milli, func) {
+  const timeoutId = setTimeout(func, milli);
+  return () => clearTimeout(timeoutId);
+}
+
 function validateModules() {
   const errors = [];
   Object.keys(modules).map(k => modules[k]).forEach(module => {
@@ -39,12 +44,12 @@ at line [${imprt.line}] but this module has default export. Maybe it's an error.
 }
 
 export default function defaultImportsChecker() {
-  let id;
+  let cancel = () => ({});
   return {
     visitor: {
       Program: {
         enter(node, parent) { // scope
-          clearTimeout(id);
+          cancel();
           modules[parent.file.opts.filename] = {
             name: parent.file.opts.filename,
             exportDefault: false,
@@ -53,8 +58,8 @@ export default function defaultImportsChecker() {
           };
         },
         exit() { // node, parent, scope
-          id = setTimeout(() => {
-            clearTimeout(id);
+          cancel = runIn(100, () => { // triggers only on last file
+            cancel();
             const [errors, warnings] = validateModules();
             if (warnings.length > 0) {
               console.log(warnings.join('\n\n').yellow);
@@ -65,7 +70,7 @@ export default function defaultImportsChecker() {
             if (errors.length > 0) {
               console.log(errors.join('\n\n').red);
             }
-          }, 100);
+          });
         },
       },
       ExportDefaultDeclaration(node, parent) { // scope
@@ -118,7 +123,6 @@ export default function defaultImportsChecker() {
           if (String(specifier.type) === 'ImportDefaultSpecifier' && path.node.source.value.startsWith('.')) {
             const filename = extractFilename();
             modules[state.file.opts.filename].dependencies.push({
-              from: state.file.opts.filename,
               filename,
               variable: specifier.local.name,
               path: path.node.source.value,
