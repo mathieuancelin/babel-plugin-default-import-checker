@@ -1,7 +1,16 @@
+/* eslint no-extend-native:0 */
+
 require('colors');
 
 const modules = {};
 const namespaceImports = [];
+
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function startWithPolyfill(searchString, p) {
+    const position = p || 0;
+    return this.indexOf(searchString, position) === position;
+  };
+}
 
 function runIn(milli, func) {
   const timeoutId = setTimeout(func, milli);
