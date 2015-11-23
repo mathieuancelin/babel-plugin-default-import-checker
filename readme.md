@@ -52,11 +52,11 @@ the `babel-plugin-default-import-checker` will display the following error
 
 ```
 ERROR : module 'example/index.js' try to use default binding
-of module 'example/hello.js' at line [1] but there is none.
-|1| import Hello from './hello';
-You should add a default binding to 'example/hello.js'
-or use the following import :
-|1| import * as Hello from  './hello';
+ | of module 'example/hello.js' at line [1] but there is none.
+ | 1 > import Hello from './hello';
+ | You should add a default binding to 'example/hello.js'
+ | or use the following import :
+ | 1 > import * as Hello from  './hello';
 ```
 
 ### Detect module with default imports being imported as namespace import
@@ -81,6 +81,6 @@ the `babel-plugin-default-import-checker` will display a warning unless there is
 
 ```
 WARNING : module 'example/index.js' is using namespace import of module 'example/hi.js'
-at line [1] but this module has default export. Maybe it's an error.
-|1| import * as Hi from './hi';
+ | at line [1] but this module has default export. Maybe it's an error.
+ | 1 > import * as Hi from './hi';
 ```

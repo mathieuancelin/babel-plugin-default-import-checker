@@ -26,11 +26,11 @@ function validateModules() {
         if (!depModule.exportDefault) {
           const message = [
             [`ERROR : module '`.red, module.name.green, `' try to use default binding`.red].join(''),
-            [`of module '`.red, depModule.name.green, `' at line [${dep.line}] but there is none.`.red].join(''),
-            `|${dep.line}| import ${dep.variable} from '${dep.path}';`.cyan,
-            [`You should add a default binding to '`.red, depModule.name.green, `'`.red].join(''),
-            `or use the following import :`.red,
-            `|${dep.line}| import * as ${dep.variable} from  '${dep.path}';`.cyan,
+            [` | of module '`.red, depModule.name.green, `' at line [${dep.line}] but there is none.`.red].join(''),
+            [` | `.red, `${dep.line} > import ${dep.variable} from '${dep.path}';`.cyan].join(''),
+            [` | You should add a default binding to '`.red, depModule.name.green, `'`.red].join(''),
+            [` | or use the following import :`.red].join(''),
+            [` | `.red, `${dep.line} > import * as ${dep.variable} from  '${dep.path}';`.cyan].join(''),
           ].join('\n');
           if (errors.indexOf(message) < 0) {
             errors.push(message);
@@ -45,8 +45,8 @@ function validateModules() {
     if (dep && dep.exportDefault && !dep.exportOther) {
       const message = [
         [`WARNING : module '`.yellow, imprt.from.green, `' is using namespace import of module '`.yellow, imprt.filename.green, `'`.yellow].join(''),
-        `at line [${imprt.line}] but this module has default export. Maybe it's an error.`.yellow,
-        `|${imprt.line}| import * as ${imprt.variable} from '${imprt.path}';`.cyan,
+        [` | at line [${imprt.line}] but this module has default export. Maybe it's an error.`.yellow].join(''),
+        [` | `.yellow, `${imprt.line} > import * as ${imprt.variable} from '${imprt.path}';`.cyan].join(''),
       ].join('\n');
       if (errors.indexOf(message) < 0) {
         warnings.push(message);
@@ -61,7 +61,7 @@ export default function defaultImportsChecker() {
   return {
     visitor: {
       Program: {
-        enter(node, parent) { // scope
+        enter(path, parent) { // scope
           cancel();
           modules[parent.file.opts.filename] = {
             name: parent.file.opts.filename,
@@ -70,7 +70,7 @@ export default function defaultImportsChecker() {
             dependencies: [],
           };
         },
-        exit() { // node, parent, scope
+        exit() { // path, parent, scope
           cancel = runIn(100, () => { // triggers only on last file
             cancel();
             const [errors, warnings] = validateModules();
@@ -86,18 +86,18 @@ export default function defaultImportsChecker() {
           });
         },
       },
-      ExportDefaultDeclaration(node, parent) { // scope
+      ExportDefaultDeclaration(path, parent) { // scope
         // filename : parent.file.opts.filename
         modules[parent.file.opts.filename].exportDefault = true;
       },
-      ExportDeclaration(node, parent) { // scope
+      ExportDeclaration(path, parent) { // scope
         // filename : parent.file.opts.filename
-        if (String(node.type) !== 'ExportDefaultDeclaration') {
+        if (String(path.type) !== 'ExportDefaultDeclaration') {
           modules[parent.file.opts.filename].exportOther = true;
         }
       },
-      ImportDeclaration(path, state) {
-        // current file : state.file.opts.filename
+      ImportDeclaration(path, parent) {
+        // current file : parent.file.opts.filename
         path.node.specifiers.map(specifier => {
           // variable name : specifier.local.name
           // relative module : path.node.source.value
@@ -108,7 +108,7 @@ export default function defaultImportsChecker() {
 
           function extractFilename() {
             const relativePath = path.node.source.value.split('\/');
-            const filePath = state.file.opts.filename.split('\/');
+            const filePath = parent.file.opts.filename.split('\/');
             filePath.pop();
             for (const i in relativePath) {
               const part = relativePath[i];
@@ -126,7 +126,7 @@ export default function defaultImportsChecker() {
           if (String(specifier.type) === 'ImportNamespaceSpecifier' && String(path.node.source.value || '').startsWith('.')) {
             const filename = extractFilename();
             namespaceImports.push({
-              from: state.file.opts.filename,
+              from: parent.file.opts.filename,
               filename,
               variable: specifier.local.name,
               path: path.node.source.value,
@@ -135,7 +135,7 @@ export default function defaultImportsChecker() {
           }
           if (String(specifier.type) === 'ImportDefaultSpecifier' && String(path.node.source.value || '').startsWith('.')) {
             const filename = extractFilename();
-            modules[state.file.opts.filename].dependencies.push({
+            modules[parent.file.opts.filename].dependencies.push({
               filename,
               variable: specifier.local.name,
               path: path.node.source.value,
