@@ -114,7 +114,7 @@ export default function defaultImportsChecker() {
             return filePath.join('/') + '.js';
           }
 
-          if (String(specifier.type) === 'ImportNamespaceSpecifier' && path.node.source.value.startsWith('.')) {
+          if (String(specifier.type) === 'ImportNamespaceSpecifier' && String(path.node.source.value || '').startsWith('.')) {
             const filename = extractFilename();
             namespaceImports.push({
               from: state.file.opts.filename,
@@ -124,7 +124,7 @@ export default function defaultImportsChecker() {
               line: specifier.loc.start.line,
             });
           }
-          if (String(specifier.type) === 'ImportDefaultSpecifier' && path.node.source.value.startsWith('.')) {
+          if (String(specifier.type) === 'ImportDefaultSpecifier' && String(path.node.source.value || '').startsWith('.')) {
             const filename = extractFilename();
             modules[state.file.opts.filename].dependencies.push({
               filename,
