@@ -5,6 +5,9 @@
     "es6": true,
     "node": true
   },
+  "ecmaFeatures": {
+    "experimentalObjectRestSpread": true
+  },
   "rules": {
     "no-console": 0,
     "guard-for-in": 0
