@@ -56,7 +56,7 @@ function validateModules() {
   return [errors, warnings];
 }
 
-export default function defaultImportsChecker() {
+export default function defaultImportsChecker(babel) {
   let cancel = () => ({});
   const visitor = {
     visitor: {
@@ -146,7 +146,7 @@ export default function defaultImportsChecker() {
       },
     },
   };
-  if (typeof babel !== 'undefined') {
+  if (typeof babel.Plugin !== 'undefined') {
     console.log('Babel 5 env. crossing fingers ...');
     return new babel.Plugin('default-import-checker', visitor);
   } else {
