@@ -58,7 +58,7 @@ function validateModules() {
 
 export default function defaultImportsChecker() {
   let cancel = () => ({});
-  return {
+  const visitor = {
     visitor: {
       Program: {
         enter(path, parent) { // scope
@@ -146,4 +146,10 @@ export default function defaultImportsChecker() {
       },
     },
   };
+  if (typeof babel !== 'undefined') {
+    console.log('Babel 5 env. crossing fingers ...');
+    return new babel.Plugin('default-import-checker', visitor);
+  } else {
+    return visitor;
+  }
 }

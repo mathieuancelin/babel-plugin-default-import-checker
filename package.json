@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-default-import-checker",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Babel 6 plugin to check if your using default imports and namespace imports on local modules that exports default bindings",
   "main": "lib/index.js",
   "jsnext:main": "lib/index.js",
