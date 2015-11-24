@@ -96,6 +96,26 @@ export default function defaultImportsChecker() {
           modules[parent.file.opts.filename].exportOther = true;
         }
       },
+      AssignmentExpression(path, parent) {
+        if (String(path.node.left.type) === 'MemberExpression') {
+          const { object, property } = path.node.left;
+          if (object
+              && property
+              && object.name
+              && property.name
+              && object.name === 'module'
+              && (property.name === 'default' || property.name === 'exports')) {
+            modules[parent.file.opts.filename].exportDefault = true;
+          } else if (object
+              && property
+              && object.name
+              && property.name
+              && object.name === 'exports'
+              && property.name !== 'default') {
+            modules[parent.file.opts.filename].exportOther = true;
+          }
+        }
+      },
       ImportDeclaration(path, parent) {
         // current file : parent.file.opts.filename
         path.node.specifiers.map(specifier => {
