@@ -7,7 +7,7 @@ This plugin only work on module transformed with Babel, it won't show any error 
 ## Usage
 
 ```
-npm install --save babel-plugin-default-import-checker
+npm install --save-dev babel-plugin-default-import-checker
 ```
 
 then in you `.babelrc` file
